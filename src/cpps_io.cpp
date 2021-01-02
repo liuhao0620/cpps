@@ -45,6 +45,12 @@ namespace cpps
 
 		return cpps_value(c,ret);
 	}
+	cpps_value cpps_io_getline(C *c)
+	{
+		std::string ret;
+		getline(std::cin, ret);
+		return cpps_value(c,ret);
+	}
 
 	
 	FILE *		cpps_io_open(std::string filepath, std::string mode)
@@ -96,7 +102,7 @@ namespace cpps
 			cpps_integer size = cpps_io_size(file);
 			char* buf = new char[size];
 			memset(buf, 0, size);
-			fread(buf, size, 1, file);
+			if (fread(buf, size, 1, file)) {};
 			fclose(file);
 			ret.append(buf, size);
 			delete[] buf;
@@ -104,10 +110,10 @@ namespace cpps
 		}
 		return ret;
 	}
-	void		cpps_io_read(FILE *file, Buffer *buf, cpps_integer len)
+	cpps_integer	cpps_io_read(FILE *file, Buffer *buf, cpps_integer len)
 	{
 		buf->realloc(buf->length() + len);
-		fread(buf->getbuffer() + buf->length(), (size_t)len, 1, file);
+		return fread(buf->getbuffer() + buf->length(), 1, (size_t)len, file);
 	}
 	std::string cpps_io_getlines(FILE *file)
 	{
@@ -256,7 +262,7 @@ namespace cpps
 #ifdef _WIN32
 		_getcwd(buffer, 4096);
 #else
-		getcwd(buffer, 4096);
+		if (getcwd(buffer, 4096)) {}
 #endif
 		return buffer;
 	}
@@ -700,6 +706,13 @@ namespace cpps
 		}
 		return -1;
 	}
+	bool	cpps_io_chdir(std::string path) {
+#ifdef WIN32
+		return SetCurrentDirectoryA(path.c_str());
+#else
+		return chdir(path.c_str());
+#endif
+	}
 	
 	cpps_integer cpps_io_rmdir(std::string sourcepath) {
 		sourcepath = cpps_io_string_replace(sourcepath, "\\", "/");
@@ -752,6 +765,7 @@ namespace cpps
 	{
 		cpps::_module(c,"io")[
 			def_inside("getc",cpps_io_getc),
+			def_inside("getline",cpps_io_getline),
 			def("fopen",cpps_io_open),
 			def("writefile",cpps_io_writefile),
 			def("readfile",cpps_io_readfile),
@@ -778,6 +792,7 @@ namespace cpps
 			def("mkdir",cpps_io_mkdir),
 			def("rmdir",cpps_io_rmdir),
 			def("mkdirs",cpps_io_mkdirs),
+			def("chdir",cpps_io_chdir),
 			def("isdir",cpps_io_isdir),
 			def("isfile",cpps_io_isfile),
 			def("normpath",cpps_io_normpath),
@@ -789,6 +804,9 @@ namespace cpps
 			def_inside("listdir",cpps_io_listdir),
 			def_inside("stat",cpps_io_get_stat),
 			def("last_write_time",cpps_io_last_write_time),
+			defvar(c,"SEEK_END", SEEK_END),
+			defvar(c,"SEEK_CUR", SEEK_CUR),
+			defvar(c,"SEEK_SET", SEEK_SET),
 #ifdef _WIN32
 			defvar(c, "sep", "\\"),
 			defvar(c, "linesep", "\r\n")

@@ -105,7 +105,7 @@ std::string  cpps_socket_prasehtml2str(cpps::C* c,cpps_socket_httpserver_request
 					trim(r);
 					if (r[0] == '@')
 					{
-						if (r.starts_with("@page(")) {
+						if (r.find("@page(") == 0) {
 							size_t pos2 = r.rfind(')');
 							if (pos2 != std::string::npos) {
 								std::string path = cpps_getcwd() + "/" +  r.substr(strlen("@page("), pos2 - strlen("@page("));
@@ -117,10 +117,10 @@ std::string  cpps_socket_prasehtml2str(cpps::C* c,cpps_socket_httpserver_request
 								
 							}
 						}
-						else if (r.starts_with("@csrf_token"))
+						else if (r.find("@csrf_token") == 0)
 						{
-							std::string csrftoken = request->getsession()->get("csrftoken",nil);
-							std::string csrfmiddlewaretoken = "<input type='hidden' name='csrfmiddlewaretoken' value='" + csrftoken + "' />";
+							object csrftoken = request->getsession()->get("csrftoken",nil);
+							std::string csrfmiddlewaretoken = "<input type='hidden' name='csrfmiddlewaretoken' value='" + csrftoken.tostring() + "' />";
 							size += csrfmiddlewaretoken.size();
 							__html.insert(pos, csrfmiddlewaretoken);
 
@@ -200,9 +200,9 @@ cpps_export_void  cpps_attach(cpps::C* c)
 		.def("setcookie", &cpps_socket_httpserver_request::setcookie)
 		.def("getcookie", &cpps_socket_httpserver_request::getcookie)
 		.def("getfiledata", &cpps_socket_httpserver_request::getfiledata)
-		.def("paramslist", &cpps_socket_httpserver_request::paramslistfunc)
-		.def("getlist", &cpps_socket_httpserver_request::getlistfunc)
-		.def("postlist", &cpps_socket_httpserver_request::postlistfunc)
+		.def_inside("paramslist", &cpps_socket_httpserver_request::paramslistfunc)
+		.def_inside("getlist", &cpps_socket_httpserver_request::getlistfunc)
+		.def_inside("postlist", &cpps_socket_httpserver_request::postlistfunc)
 		.def("session", &cpps_socket_httpserver_request::getsession),
 		_class< cpps_socket_httpserver_request_filedata>("filedata")
 		.def("name", &cpps_socket_httpserver_request_filedata::name)
@@ -214,9 +214,6 @@ cpps_export_void  cpps_attach(cpps::C* c)
 		.def("set",&cpps_socket_httpserver_session::set)
 		.def("clear",&cpps_socket_httpserver_session::clear)
 		.def("remove",&cpps_socket_httpserver_session::remove)
-		.def("set_expire",&cpps_socket_httpserver_session::set_expire)
-
-
 	];
 
 }

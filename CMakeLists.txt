@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt: 顶层 CMake 项目文件，在此处执行全局配置
 # 并包含子项目。
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.5)
 
 project ("libcpps")
 
@@ -15,7 +15,7 @@ endif ()
 
 if (WINDOWS)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-	add_compile_options("/std:c++latest")
+	add_compile_options("/std:c++17")
 elseif (MACOS)
 	#default release.
 	if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)

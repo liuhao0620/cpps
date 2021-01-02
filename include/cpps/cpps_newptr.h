@@ -22,14 +22,18 @@ namespace cpps
 	void					cpps_step_all(C* c, int32 retType, cpps_domain* domain, cpps_domain* root, node* o);
 	object					doclassfunction(C* c, object leftdomain, object func);
 	//可以增加到GC的PTR
-	
+	struct string;
 	
 
 	template<class T>
 	inline cpps_value		newclass(C *c, T ** ret)
 	{
 		bool isstr = cpps_is_string<T>().b;
-		cpps_cppsclassvar *var = cpps_class_singleton<T*>::instance()->getcls()->create(c,true);
+		cpps_cppsclassvar* var;
+		if (isstr)
+			var = cpps_class_singleton<cpps::string*>::instance()->getcls()->create(c, true);
+		else
+			var = cpps_class_singleton<T*>::instance()->getcls()->create(c, true);
 		//将新创建出来的添加到新生区稍后检测要不要干掉
 		cpps_gc_add_gen0(c, var);
 		*ret = (T *)var->getclsptr();
@@ -39,7 +43,7 @@ namespace cpps
 	}
 
 	inline cpps_value cpps_new_tmp_string(const std::string& tmp) {
-		cpps_cppsclassvar* var = cpps_class_singleton<std::string*>::instance()->getcls()->create(NULL, false);
+		cpps_cppsclassvar* var = cpps_class_singleton<cpps::string*>::instance()->getcls()->create(NULL, false);
 		var->setclsptr((void*)&tmp);
 		cpps_value retv(var);
 		retv.tt = CPPS_TSTRING;
@@ -59,14 +63,9 @@ namespace cpps
 		cpps_step_newclassvar_reg_baselassvar(cppsclass, c, cppsclassvar, cppsclassvar);
 		//将类对象里面的变量创建出来
 		if (cppsclass->o)
-			cpps_step_all(c, CPPS_SINGLERET, cppsclassvar,cppsclassvar, cppsclass->o->getright());
+			cpps_step_all(c, CPPS_MUNITRET, cppsclassvar,cppsclassvar, cppsclass->o->getright());
 		//将新创建出来的添加到新生区稍后检测要不要干掉
 		cpps_gc_add_gen0(c, cppsclassvar);
-		//cpps_regvar* v = new cpps_regvar();
-		//v->setvarname("this");//修改成关键字.
-		//v->setval(cpps_value(cppsclassvar)); //域列表会copy进去
-		//v->setconst(true);
-		//cppsclassvar->regvar(NULL, v);
 		//执行0参数构造函数
 		cpps_domain* leftdomain = NULL;
 		cpps_regvar* var = cppsclassvar->getvar("constructor", leftdomain);

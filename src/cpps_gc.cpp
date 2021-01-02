@@ -50,8 +50,8 @@ namespace cpps
 			{
 				cpps_cppsclassvar *pClsVar = (cpps_cppsclassvar *)v.value.domain;
 				cpps_vector *pVector = (cpps_vector*)pClsVar->getclsptr();
-				std::vector<cpps_value>& realvector = pVector->realvector();//2019-12-14 防止外部正在调用begin 导致数据错乱
-				for (std::vector<cpps_value>::iterator it = realvector.begin(); it != realvector.end(); ++it)
+				cpps_std_vector& realvector = pVector->realvector();//2019-12-14 防止外部正在调用begin 导致数据错乱
+				for (cpps_std_vector::iterator it = realvector.begin(); it != realvector.end(); ++it)
 				{
 					const cpps_value& value = *it;
 					cpps_gc_check_gen_value(c, value, checkchild, oldgen, newgen, size, isCheck);
@@ -272,12 +272,41 @@ namespace cpps
 	}
 	void		gc_cleanup(C *c )
 	{
+		for (phmap::flat_hash_set<cpps_cppsclassvar*>::iterator it = c->getgen0()->begin();
+			it != c->getgen0()->end(); ++it)
+		{
+			cpps_cppsclassvar* pClsVar = *it;
+			pClsVar->destory(c);
+			if (pClsVar->domainname == "vector") {
+				cpps_vector* vct = (cpps_vector*)pClsVar->getclsptr();
+				vct->clear();
+			}
+			else if (pClsVar->domainname == "map"){
+				cpps_map* m = (cpps_map*)pClsVar->getclsptr();
+				m->clear();
+			}
+		}
+		for (phmap::flat_hash_set<cpps_cppsclassvar*>::iterator it = c->getgen1()->begin();
+			it != c->getgen1()->end(); ++it)
+		{
+			cpps_cppsclassvar* pClsVar = *it;
+			pClsVar->destory(c);
+			if (pClsVar->domainname == "vector") {
+				cpps_vector* vct = (cpps_vector*)pClsVar->getclsptr();
+				vct->clear();
+			}
+			else if (pClsVar->domainname == "map") {
+				cpps_map* m = (cpps_map*)pClsVar->getclsptr();
+				m->clear();
+			}
+		}
+
+
 		//清理当前线程的
 		for (phmap::flat_hash_set<cpps_cppsclassvar *>::iterator it = c->getgen0()->begin();
 			it != c->getgen0()->end(); ++it)
 		{
 			cpps_cppsclassvar * pClsVar = *it;
-			pClsVar->destory(c);
 			delete pClsVar;
 		}
 		c->getgen0()->clear();
@@ -288,7 +317,6 @@ namespace cpps
 			it != c->getgen1()->end(); ++it)
 		{
 			cpps_cppsclassvar * pClsVar = *it;
-			pClsVar->destory(c);
 			delete pClsVar;
 		}
 

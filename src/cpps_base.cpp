@@ -8,11 +8,12 @@ namespace cpps
 	void cpps_load_filebuffer(const char* path, std::string& fileSrc);
 	std::string getfilenamenotext(std::string str);
 	std::string cpps_rebuild_filepath(std::string path);
+	cpps_integer cpps_math_rand();
 	bool cpps_base_isdebug() {
-#ifdef NDEBUG
-		return false;
-#else
+#ifdef _DEBUG
 		return true;
+#else
+		return false;
 #endif
 	}
 	bool cpps_base_isset(cpps_value v)
@@ -56,7 +57,8 @@ namespace cpps
 	{
 		if (type(b) == CPPS_TNUMBER)
 		{
-			double s = object_cast<double>(b);
+			cpps_number s = object_cast<cpps_number>(b);
+			cout.precision(20);
 			cout << s;
 		}
 		else if (type(b) == CPPS_TINTEGER)
@@ -233,9 +235,9 @@ namespace cpps
 		}
 		return ret;
 	}
-	void cpps_base_system(std::string v)
+	int32 cpps_base_system(std::string v)
 	{
-		system(v.c_str());
+		return system(v.c_str());
 	}
 	void cpps_base_setconsoletitle(std::string title)
 	{
@@ -329,7 +331,7 @@ namespace cpps
 			stack->init("main.cpp", 0, "import");
 
 			c->push_stack(stack);
-			cpps_step_all(c, CPPS_SINGLERET, c->_G,c->_G, o);
+			cpps_step_all(c, CPPS_MUNITRET, c->_G,c->_G, o);
 			c->pop_stack();
 
 
@@ -339,7 +341,42 @@ namespace cpps
 		}
 		return true;
 	}
-	bool	cpps_freelibrary(C*c, std::string libname)
+
+	void cpps_detach_library(HMODULE module,const std::string& libname, C* c)
+	{
+		//printf("cpps_detach_library -> %s\r\n", libname.c_str());
+		if (module == NULL) return;
+#ifdef _WIN32
+		std::string libfuncname = "cpps_detach";
+
+		cpps_detach_func cpps_detach = (cpps_detach_func)GetProcAddress(module, libfuncname.c_str());
+		if (cpps_detach == NULL)
+		{
+			printf("Free Module【%s】 faild.\r\n", libname.c_str());
+		}
+		else
+		{
+			cpps_detach(c);
+			FreeLibrary(module);
+		}
+#else
+		dlerror();
+		CPPS_ST_API* api = (CPPS_ST_API*)dlsym(module, "LIBAPI");
+		if (api == NULL)
+		{
+			printf("dlsym [LIBAPI] faild\r\n");
+		}
+		else
+		{
+			api->cpps_detach(c);
+#if defined LINUX
+			dlclose(module);
+#endif
+		}
+#endif
+	}
+
+	bool	cpps_freelibrary(C* c, std::string libname)
 	{
 
 		if (c->modulelist.find(libname) == c->modulelist.end()) return true;
@@ -352,20 +389,7 @@ namespace cpps
 		{
 			HMODULE module = it->second;
 			if (module) {
-				std::string libfuncname = "cpps_detach";
-
-				cpps_detach_func cpps_detach = (cpps_detach_func)GetProcAddress(module, libfuncname.c_str());
-				if (cpps_detach == NULL)
-				{
-					printf("Free Module【%s】 faild.\r\n", libname.c_str());
-				}
-				else
-				{
-					cpps_detach(c);
-				}
-
-
-				FreeLibrary(module);
+				cpps_detach_library(module, libname, c);
 			}
 			c->modulelist.erase(it);
 			ret = true;
@@ -378,22 +402,9 @@ namespace cpps
 		if (it != c->modulelist.end())
 		{
 			HMODULE module = it->second;
-
-
-
-			dlerror();
-			CPPS_ST_API* api = (CPPS_ST_API*)dlsym(module, "LIBAPI");
-			if (api == NULL)
-			{
-				printf("dlsym [LIBAPI] faild\r\n");
+			if (module) {
+				cpps_detach_library(module, libname, c);
 			}
-			else
-			{
-				api->cpps_detach(c);
-			}
-
-
-			dlclose(module);
 			c->modulelist.erase(it);
 			ret = true;
 		}
@@ -558,7 +569,7 @@ namespace cpps
 		}
 		return ret;
 	}
-	size_t partition(std::vector<cpps_value>& v, size_t begin, size_t end)
+	size_t partition(cpps_std_vector& v, size_t begin, size_t end)
 	{
 		cpps_value pivot = v[begin];
 		size_t left = begin + 1;
@@ -579,7 +590,7 @@ namespace cpps
 		v[left] = pivot;
 		return left;
 	}
-	void quickSort(std::vector<cpps_value>& v, size_t begin, size_t end)
+	void quickSort(cpps_std_vector& v, size_t begin, size_t end)
 	{
 		if (begin >= end)
 			return;
@@ -594,15 +605,33 @@ namespace cpps
 			quickSort(vec->realvector(), 0, vec->size() - 1);
 		}
 	}
+	void cpps_base_real_shuffle(cpps_std_vector& vec)
+	{
+		size_t n = vec.size();
+		if (n <= 0)
+			return;
+
+		for (size_t i = 0; i < n; i++)
+		{
+			//保证每次第i位的值不会涉及到第i位以前
+			size_t index = i + ((size_t)cpps_math_rand()) % (n - i);
+			std::swap(vec[index], vec[i]);
+		}
+	}
+	void cpps_base_shuffle(object v)
+	{
+		if (v.isvector()) {
+			cpps_vector* vec = cpps_to_cpps_vector(v.value);
+			cpps_base_real_shuffle(vec->realvector());
+		}
+	}
 	void cpps_base_exit(cpps_integer exitcode)
 	{
 		exit((int)exitcode);
 	}
 	void cpps_regbase(C *c)
 	{
-		cpps::_module(c)[
-			_class<std::string>("String")
-		];
+		
 		cpps::_module(c)[
 			_class<C>("C_STATE"),
 			def("printf", cpps_base_printf),
@@ -618,6 +647,7 @@ namespace cpps
 			def("toint", cpps_base_tointeger),
 			def("int", cpps_base_tointeger),
 			def("tostring", cpps_base_tostring),
+			def("str", cpps_base_tostring),
 			def("isstring", cpps_base_isstring),
 			def("isint", cpps_base_isint),
 			def("isbool", cpps_base_isbool),
@@ -633,6 +663,7 @@ namespace cpps
 			def("system", cpps_base_system),
 			def("len", cpps_base_len),
 			def("sort", cpps_base_sort),
+			def("shuffle", cpps_base_shuffle),
 			def("isset", cpps_base_isset),
 			def("isdebug", cpps_base_isdebug),
 			def("SetConsoleTitle", cpps_base_setconsoletitle),
@@ -670,9 +701,16 @@ namespace cpps
 		cpps::_module(c, "sys")[
 			defvar(c, "platform", CPPS_CURRENT_PLANTFORM),
 			defvar(c, "easyplatform", CPPS_CURRENT_EASYPLANTFORM),
+			defvar(c, "os", CPPS_CURRENT_EASYPLANTFORM),
+			defvar(c, "arch", CPPS_CURRENT_ARCH),
 			defvar(c, "builder_version", CPPS_BUILDER_VERSION),
 			defvar(c, "version", CPPS_VER),
-			defvar(c, "versionno", CPPS_VERN)
+			defvar(c, "versionno", CPPS_VERN),
+#ifdef _DEBUG
+			defvar(c, "debug", true)
+#else
+			defvar(c, "debug", false)
+#endif
 		];
 
 

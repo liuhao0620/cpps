@@ -385,32 +385,7 @@ namespace cpps
 		cpps_string_ltrim(cpps_string_rtrim(s));
 		return  s;
 	}
-	bool cpps_string_regex_match(std::string src, std::string reg)
-	{
-		std::regex e(reg.c_str());
-		return std::regex_match(src, e);
-	}
-	/*
-	cpps_value cpps_string_regex_search(C *c,std::string src, std::string reg)
-	{
-		std::smatch *vec;
-		cpps_value ret = newclass<std::smatch>(c, &vec);
 
-		std::regex e(reg.c_str());
-		std::regex_search(src,*vec, e);
-
-		return ret;
-	}
-	*/
-	std::string cpps_string_regex_replace(cpps_value src, std::string reg,std::string pos)
-	{
-		if (src.tt != CPPS_TSTRING) return "";
-		std::regex e(reg.c_str());
-		cpps_cppsclassvar *cppsclassvar = (cpps_cppsclassvar *)src.value.domain;
-		std::string *tmpStr = (std::string *)cppsclassvar->getclsptr();
-
-		return std::regex_replace(*(tmpStr), e, pos);
-	}
 	cpps_value cpps_string_chr(C*c,cpps_integer ch)
 	{
 		std::string ret;
@@ -445,33 +420,39 @@ namespace cpps
 			unsigned short code = static_cast<unsigned short>(vec->at(i).value.integer);
 			ret.append((char *)&code,2);
 		}
-		ret.append("\0\0", 2);
 		return cpps_value(c,ret);
 	}
-	cpps_integer cpps_string_charCodeAt(cpps_value src, cpps_integer pos)
-	{
-		if (src.tt != CPPS_TSTRING) return 0;
-		cpps_cppsclassvar *cppsclassvar = (cpps_cppsclassvar *)src.value.domain;
-		std::string *tmpStr = (std::string *)cppsclassvar->getclsptr();
 
-		if (tmpStr->size() <= size_t(pos)) return 0;
-
-		unsigned char ret = *((char*)(tmpStr->c_str() + pos));
-		return static_cast<cpps_integer>(ret);
-	}
-	cpps_value cpps_string_fromCodeAt(C*c,cpps_vector* vec)
-	{
-		std::string ret = "";
-		for (size_t i = 0; i < size_t(vec->size()); i++)
-		{
-			char code = static_cast<char>(vec->at(i).value.integer);
-			ret.push_back(code);
-		}
-		ret.append("\0", 2);
-		return cpps_value(c,ret);
-	}
 	void cpps_regstring(C *c)
 	{
+		cpps::_module(c)[
+			_class<cpps::string>("String")
+				.def("size", &cpps::string::cpps_size)
+				.def("find", &cpps::string::cpps_string_find)
+				.def("rfind", &cpps::string::cpps_string_rfind)
+ 				.def("replace", &cpps::string::cpps_string_replace)
+ 				.def("clear", &cpps::string::cpps_string_clear)
+ 				.def("copyto", &cpps::string::cpps_string_copyto)
+ 				.def_inside("split", &cpps::string::cpps_string_split)
+ 				.def_inside("cut", &cpps::string::cpps_string_cut)
+ 				.def("strcut", &cpps::string::cpps_string_strcut)
+ 				.def_inside("strcuts", &cpps::string::cpps_string_strcuts)
+ 				.def("empty", &cpps::string::cpps_string_empty)
+ 				.def("substr", &cpps::string::cpps_string_sub)
+ 				.def("at", &cpps::string::cpps_string_at)
+ 				.def("tolower", &cpps::string::cpps_string_tolower)
+ 				.def("toupper", &cpps::string::cpps_string_toupper)
+ 				.def("trim", &cpps::string::cpps_string_trim)
+ 				.def("ltrim", &cpps::string::cpps_string_ltrim)
+ 				.def("rtrim", &cpps::string::cpps_string_rtrim)
+ 				.def("join", &cpps::string::cpps_string_join)
+ 				.def("startswith", &cpps::string::cpps_string_startswith)
+ 				.def("endswith", &cpps::string::cpps_string_endswith)
+ 				.def("pop_back", &cpps::string::cpps_string_pop_back)
+ 				.def("push_back", &cpps::string::cpps_string_push_back)
+ 				.def("append", &cpps::string::cpps_string_append)
+		];
+
 		cpps::_module(c,"string")[
 			def("find", cpps_string_find),
 			def("rfind", cpps_string_rfind),
@@ -499,18 +480,255 @@ namespace cpps
 			def("startswith", cpps_string_startswith),
 			def("endswith", cpps_string_endswith),
 			def("pop_back", cpps_string_pop_back),
-			def("regex_match", cpps_string_regex_match),
-			def("regex_replace", cpps_string_regex_replace),
 			def_inside("chr",cpps_string_chr),
 			def("push_back", cpps_string_push_back),
 			def("unicode_charCodeAt",cpps_string_unicode_charCodeAt),
-			def_inside("unicode_fromCodeAt",cpps_string_unicode_fromCodeAt),
-			def("charCodeAt",cpps_string_charCodeAt),
-			def_inside("fromCodeAt",cpps_string_fromCodeAt)
-
-			
+			def_inside("unicode_fromCodeAt",cpps_string_unicode_fromCodeAt)
 		];
 
+	}
+
+	cpps_integer string::cpps_size()
+	{
+		return (cpps_integer)size();
+	}
+
+	cpps_integer string::cpps_string_find(std::string v2, object off)
+	{
+		size_t pos = 0;
+		if (off.isint()) pos = (size_t)off.toint();
+		return (cpps_integer)find(v2, pos);
+	}
+
+	cpps_integer string::cpps_string_rfind(std::string v2, object off)
+	{
+		size_t pos = 0;
+		if (off.isint()) pos = (size_t)off.toint();
+		return (cpps_integer)rfind(v2, pos);
+	}
+
+	cpps::string* string::cpps_string_replace(std::string v2, std::string v3)
+	{
+		std::string::size_type pos = 0;
+
+		while ((pos = find(v2, pos)) != std::string::npos)
+		{
+			replace(pos, v2.length(), v3);
+			pos += v3.length();
+		}
+		return this;
+	}
+
+	void string::cpps_string_clear()
+	{
+		clear();
+	}
+
+	void string::cpps_string_copyto(cpps::string* tar, object off, object len)
+	{
+		size_t noff = 0;
+		size_t nlen = std::string::npos;
+		if (off.isint()) noff = (size_t)off.toint();
+		if (len.isint()) nlen = (size_t)len.toint();
+
+		tar->append(substr(noff, nlen));
+	}
+
+	cpps::cpps_value string::cpps_string_split(C*c,std::string v2, object len)
+	{
+		cpps_integer nlen = -1;
+		if (len.isint()) nlen = len.toint();
+
+		cpps_vector* vec;
+		cpps_value ret = newclass<cpps_vector>(c, &vec);
+
+
+		if (empty()) return ret;
+
+		const char* a = c_str(); const char* b;
+		while (true)
+		{
+			b = strstr(a, v2.c_str());
+
+			if (!b)	b = a + strlen(a);
+
+			std::string s;
+			s.append(a, strlen(a) - strlen(b));
+
+			vec->push_back(cpps_value(c, s));
+
+			if (nlen != -1 && vec->size() >= nlen) break;
+
+			//如果到了结尾那就出去吧。
+			if (strlen(b) == 0 || strlen(b) == 1) break;
+			else a = b + v2.size();
+
+		}
+
+		return ret;
+	}
+
+	cpps::cpps_value string::cpps_string_cut(C* c, cpps_integer len)
+	{
+		cpps_vector* vec;
+		cpps_value ret = newclass<cpps_vector>(c, &vec);
+
+		size_t ncount = (size_t)len;
+		size_t FileSize = size();
+		size_t pos1 = 0;
+		for (size_t j = 0; j < FileSize / ncount + 1; j++)
+		{
+			size_t res = FileSize - pos1 < ncount ? FileSize - pos1 : ncount;
+			if (res != 0)
+			{
+				std::string* s;
+				cpps_value sv = newclass<std::string>(c, &s);
+				s->append(c_str() + pos1, res);
+				vec->push_back(sv);
+				pos1 += res;
+
+			}
+		}
+
+		return ret;
+	}
+
+	std::string string::cpps_string_strcut(std::string v2, std::string v3)
+	{
+		const char* strtmp1 = strstr(c_str(), v2.c_str());
+		if (!strtmp1) return "";
+
+		const char* strtmp2 = strstr(strtmp1 + v2.size(), v3.c_str());
+		if (!strtmp2) return "";
+
+		std::string out;
+		out.append(strtmp1 + v2.size(), strtmp2 - strtmp1 - v2.size());
+
+		return out;
+	}
+
+	cpps::cpps_value string::cpps_string_strcuts(C* c, std::string start, std::string end)
+	{
+		cpps_vector* vec;
+		cpps_value ret = newclass<cpps_vector>(c, &vec);
+
+
+		const char* begin = c_str();
+		while (true)
+		{
+			const char* strtmp1 = strstr(begin, start.c_str());
+			if (!strtmp1) return ret;
+
+			const char* strtmp2 = strstr(strtmp1 + start.size(), end.c_str());
+			if (!strtmp2) return ret;
+
+			std::string out;
+			out.append(strtmp1 + start.size(), strtmp2 - strtmp1 - start.size());
+
+			vec->push_back(cpps_value(c, out));
+
+			begin = strtmp2 + end.size();
+		}
+		return ret;
+	}
+
+	bool string::cpps_string_empty()
+	{
+		return empty();
+	}
+
+	bool string::cpps_string_startswith(std::string v)
+	{
+		return find(v) == 0;
+	}
+
+	bool string::cpps_string_endswith(std::string v)
+	{
+		size_t pos = rfind(v);
+		if (pos == std::string::npos) return false;
+		if (pos + v.size() == size()) return true;
+		return false;
+	}
+
+	std::string string::cpps_string_sub(cpps_integer off, object len)
+	{
+		size_t nlen = std::string::npos;
+		if (len.isint()) nlen = len.toint();
+
+		return substr(off, nlen);
+	}
+
+	cpps_integer string::cpps_string_at(cpps_integer off)
+	{
+		return (cpps_integer)at(off);
+	}
+
+	std::string string::cpps_string_tolower()
+	{
+		std::string ret;
+		ret.resize(size());
+		for (size_t i = 0; i < size(); i++) {
+			ret[i] = (char)tolower(at(i));
+		}
+		return ret;
+	}
+
+	std::string string::cpps_string_toupper()
+	{
+		std::string ret;
+		ret.resize(size());
+		for (size_t i = 0; i < size(); i++) {
+			ret[i] = (char)toupper(at(i));
+		}
+		return ret;
+	}
+
+	std::string string::cpps_string_join(cpps_vector* vec)
+	{
+		std::string ret;
+		for (auto s : vec->realvector()) {
+			ret += cpps_to_string(s);
+			ret += c_str();
+		}
+		return ret;
+	}
+
+	void string::cpps_string_trim()
+	{
+		cpps_string_rtrim();
+		cpps_string_ltrim();
+	}
+
+	void string::cpps_string_ltrim()
+	{
+		std::string::iterator   p = find_if(begin(), end(), [](char code) { return !isspace(code); });
+		erase(begin(), p);
+	}
+
+	void string::cpps_string_rtrim()
+	{
+		std::string::reverse_iterator  p = find_if(rbegin(), rend(), [](char code) { return !isspace(code); });
+		erase(p.base(), end());
+	}
+
+	void string::cpps_string_pop_back(object len)
+	{
+		size_t nlen = 1;
+		if (len.isint()) nlen = (size_t)len.toint();
+		for (size_t i = 0; i < nlen; i++)
+		{
+			pop_back();
+		}
+	}
+
+	void string::cpps_string_push_back(cpps_integer charcode)
+	{
+		push_back((const char)charcode);
+	}
+
+	void string::cpps_string_append(std::string v)
+	{
+		append(v);
 	}
 
 }

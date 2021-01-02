@@ -36,7 +36,11 @@
 #define CPPS_CURRENT_PLANTFORM "unknow OS system."
 #endif
 
-
+#ifdef _X86_
+#define CPPS_CURRENT_ARCH "x86"
+#else
+#define CPPS_CURRENT_ARCH "x64"
+#endif
 
 #if defined _MSC_VER
 #define CPPS_BUILDER_VERSION_MAKE2(a,b) a # b " " CPPS_CURRENT_PLANTFORM
@@ -55,7 +59,7 @@
 #endif
 
 #define CPPS_VER		"1.0.0 Build 20201209 [" CPPS_BUILDER_VERSION "]"
-#define CPPS_VERN		1000
+#define CPPS_VERN		10000
 #define CPPS_NAME		"CPPS"
 #ifndef M_PI
 #define M_PI				3.14159265358979323846
@@ -73,19 +77,20 @@
 #define CPPS_ENCODE_CPPS_KEY	0x1f
 
 
-#define CPPS_TNIL		0
-#define CPPS_TINTEGER	1	
-#define CPPS_TNUMBER	2
-#define CPPS_TBOOLEAN	3
-#define CPPS_TSTRING	4
-#define	CPPS_TUSERDATA	5
-#define CPPS_TFUNCTION	6
-#define CPPS_TDOMAIN	7	//暂时内部用（域）
-#define CPPS_TREGVAR	8	//变量引用（指针)（域）
-#define CPPS_TCLASS		9	//定义类
-#define CPPS_TCLASSVAR  10  //类的对象
+#define CPPS_TNIL				0
+#define CPPS_TINTEGER			1	
+#define CPPS_TNUMBER			2
+#define CPPS_TBOOLEAN			3
+#define CPPS_TSTRING			4
+#define	CPPS_TUSERDATA			5
+#define CPPS_TFUNCTION			6
+#define CPPS_TDOMAIN			7	//暂时内部用（域）
+#define CPPS_TREGVAR			8	//变量引用（指针)（域）
+#define CPPS_TCLASS				9	//定义类
+#define CPPS_TCLASSVAR			10  //类的对象
 #define CPPS_TLAMBDAFUNCTION	11
-#define CPPS_TMULTIRETURN	12
+#define CPPS_TMULTIRETURN		12
+#define CPPS_TSTRINGV			13
 
 #define CPPS_SINGLERET		0
 #define CPPS_MUNITRET		1
@@ -156,6 +161,7 @@
 #define CPPS_MULTIVAR			61 //模块
 #define CPPS_OTHIS				62 //this关键字的重写
 #define CPPS_OTHISPARAM			63 //字符串参数
+#define CPPS_OYIELD				64 //字符串参数
 
 
 #define CPPS_NOERROR			0	//函数返回没有错误
@@ -274,6 +280,7 @@ namespace cpps
 	typedef	long long			int64;
 	typedef	unsigned long long	usint64;
 }
+
 
 
 
@@ -396,6 +403,9 @@ typedef struct {
 namespace cpps
 {
 	struct C;
+
+	struct cpps_value;
+	typedef std::vector<cpps_value> cpps_std_vector;
 }
 #ifdef _WIN32
 typedef void(__stdcall*cpps_attach_func)(cpps::C *c);

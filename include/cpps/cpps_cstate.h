@@ -25,7 +25,7 @@ namespace cpps
 	{
 		cpps_stack();
 		void						init(const char* pf, int32 pl, const char *pfunc);
-		std::vector<cpps_value> *	createparams();
+		cpps_std_vector *			createparams();
 		cpps_value *				create_cpps_value();
 		char		 f[64];
 		char		 func[64];
@@ -64,8 +64,8 @@ namespace cpps
 		cpps_domain*																_G;	//根节点
 		std::vector<cpps_stack*>													*_callstack; //堆栈
 		phmap::flat_hash_set<cpps_regvar*>											barrierList; //分界List
-		phmap::flat_hash_set<cpps_cppsclassvar *>										gen0; //分界List
-		phmap::flat_hash_set<cpps_cppsclassvar *>										gen1; //分界List
+		phmap::flat_hash_set<cpps_cppsclassvar *>									gen0; //分界List
+		phmap::flat_hash_set<cpps_cppsclassvar *>									gen1; //分界List
 		size_t																		gen0size;//新生代当前占内存大小（字节）
 		size_t																		gen1size;//老生代当前占内存大小（字节）
 		size_t																		lastgensize;
@@ -80,7 +80,7 @@ namespace cpps
 		node*																		curnode;
 		bool																		buildoffset;
 		bool																		disabled_non_def_var;
-		phmap::flat_hash_map<std::string, cpps_module_data*>							savemoduledatas;
+		phmap::flat_hash_map<std::string, cpps_module_data*>						savemoduledatas;
 	};
 }
 #endif // CPPS_CSTATE_CPPS_HEAD_

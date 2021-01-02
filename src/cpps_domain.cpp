@@ -117,14 +117,14 @@ namespace cpps
 		{
 			if (parent[1] )
 			{
-				if (!(parent[1]->domainType == cpps_domain_type_root && filterroot)) {
+				if (parent[1]->domainType != cpps_domain_type_root || !filterroot) {
 					cpps_regvar* ret = parent[1]->getvar(s, leftdomain, findparent, filterroot);
 					if (ret) return ret;
 				}
 			}
 			if (parent[0])
 			{
-				if (!(parent[0]->domainType == cpps_domain_type_root && filterroot)) {
+				if (parent[0]->domainType != cpps_domain_type_root || !filterroot) {
 					cpps_regvar* ret = parent[0]->getvar(s, leftdomain,findparent,filterroot);
 					if (leftdomain == NULL && parent[0]->domainType == cpps_domain_type_class)
 					{
@@ -182,15 +182,15 @@ namespace cpps
 						cpps_function* func = (cpps_function*)v->getval().value.func;
 						delete func;//类里面的函数也要被清理
 					}
-					else if (isclose && v->getval().tt == CPPS_TDOMAIN && v->getval().value.domain != this)
+					else if (isclose && v->getval().tt == CPPS_TDOMAIN && v->getval().value.domain != this && v->getval().value.domain != c->_G)
 					{
 						cpps_domain* domain = v->getval().value.domain;
 						domain->hasVar = false;
 						domain->destory(c, isclose);
 						delete domain;
 					}
+					delete v;
 				}
-				delete v;
 			}
 			varList.clear();
 			hasVar = false;

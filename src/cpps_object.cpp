@@ -335,7 +335,7 @@ namespace cpps
 		return  static_cast<object>(cpps_value_vector);
 	}
 
-	object object::create_with_classvar(C* c, object __classobject)
+	object object::create_with_cppsclassvar(C* c, object __classobject)
 	{
 		cpps::cpps_cppsclass* cppsclass = cpps_to_cpps_cppsclass(__classobject.value);
 		if(cppsclass->iscppsclass())
@@ -346,14 +346,15 @@ namespace cpps
 	object::vector::vector(object obj)
 	{
 		_vec = cpps_to_cpps_vector(obj.value);
+		_src_value = obj.value;
 	}
 
-	std::vector<cpps_value>::iterator object::vector::begin()
+	cpps_std_vector::iterator object::vector::begin()
 	{
 		return _vec->realvector().begin();
 	}
 
-	std::vector<cpps_value>::iterator object::vector::end()
+	cpps_std_vector::iterator object::vector::end()
 	{
 		return _vec->realvector().end();
 	}
@@ -363,16 +364,32 @@ namespace cpps
 		_vec->push_back(object::real(v).value);
 	}
 
+	cpps::object object::vector::toobject()
+	{
+		return _src_value;
+	}
+
 	cpps::object object::vector::operator[](const cpps_integer k)
 	{
 		cpps_value& v = _vec->realvector()[k];
 		return cpps_value(&v);
 	}
 
+	cpps::cpps_std_vector& object::vector::realvector()
+	{
+		return _vec->realvector();
+	}
+
+	object::vector object::vector::create(C* c)
+	{
+		return object::vector(object::create_with_vector(c));
+	}
+
 	object::map::map(C* cstate, object obj)
 	{
 		_map = cpps_to_cpps_map(obj.value);
 		c = cstate;
+		_src_value = obj.value;
 	}
 
 	cpps_hash_map::iterator object::map::begin()
@@ -391,6 +408,21 @@ namespace cpps
 	void object::map::insert(object key, object value)
 	{
 		_map->insert(object::real(key).value, object::real(value).value);
+	}
+
+	cpps::object object::map::toobject()
+	{
+		return _src_value;
+	}
+
+	cpps::cpps_hash_map& object::map::realmap()
+	{
+		return _map->realmap();
+	}
+
+	cpps::object::map object::map::create(C* c)
+	{
+		return cpps::object::map(c,cpps::object::create_with_map(c));
 	}
 
 }
